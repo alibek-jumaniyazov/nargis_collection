@@ -1,21 +1,20 @@
-import { Outlet, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
-import Navbar from './Navbar';
-import Footer from './Footer';
-import CartDrawer from './CartDrawer';
+import { Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import CartDrawer from "./CartDrawer";
 
 export default function MainLayout() {
   const { pathname } = useLocation();
 
-  // Scroll to top on route change
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white text-[#111111]">
       <Navbar />
-      <main className="flex-1 pt-16 md:pt-20">
+      <main className="flex-1 pt-[68px] md:pt-[84px]">
         <Outlet />
       </main>
       <Footer />

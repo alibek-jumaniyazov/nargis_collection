@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
-import { mockProducts, mockCategories } from '../data/mockData';
+import { getProducts, getCategories } from '../api/services';
 import ProductGrid from '../components/product/ProductGrid';
-import type { Product } from '../types';
+import type { Product, Category } from '../types';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
 const SORT_OPTIONS = [
@@ -19,35 +19,68 @@ export default function CategoryPage() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [priceMax, setPriceMax] = useState(1000);
   const [sort, setSort] = useState('newest');
+  
+  const [products, setProducts] = useState<Product[]>([]);
+  const [category, setCategory] = useState<Category | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const category = mockCategories.find((c) => c.slug === slug);
   const isNew = slug === 'new';
 
+  useEffect(() => {
+    setLoading(true);
+    // Fetch products based on slug
+    const fetchParams: any = {};
+    if (isNew) {
+      fetchParams.isNewArrival = true;
+    } else {
+      // For now assume slug can be category or gender. We will pass it as category.
+      // If it is 'men' or 'women', we pass gender.
+      if (['women', 'men', 'unisex'].includes(slug || '')) {
+         fetchParams.gender = slug;
+      } else {
+         fetchParams.category = slug;
+      }
+    }
+
+    Promise.all([
+      getProducts(fetchParams),
+      getCategories()
+    ]).then(([prodRes, catRes]) => {
+      setProducts(prodRes.data.data);
+      const cat = catRes.data.find(c => c.slug === slug);
+      setCategory(cat || null);
+    }).catch(err => {
+      console.error(err);
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, [slug]);
+
   const filtered = useMemo(() => {
-    let products = isNew
-      ? mockProducts.filter((p) => p.isNewArrival)
-      : mockProducts.filter((p) => p.category.slug === slug || p.gender === slug);
+    let result = [...products];
 
     if (selectedSizes.length > 0) {
-      products = products.filter((p) =>
+      result = result.filter((p) =>
         p.sizes.some((s) => selectedSizes.includes(s.size) && s.stock > 0)
       );
     }
-    products = products.filter((p) => (p.salePrice || p.price) <= priceMax);
+    result = result.filter((p) => (p.salePrice || p.price) <= priceMax);
 
     switch (sort) {
       case 'price-asc':
-        return [...products].sort((a, b) => (a.salePrice || a.price) - (b.salePrice || b.price));
+        return [...result].sort((a, b) => (a.salePrice || a.price) - (b.salePrice || b.price));
       case 'price-desc':
-        return [...products].sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
+        return [...result].sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
       case 'featured':
-        return [...products].sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
+        return [...result].sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
       default:
-        return [...products].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return [...result].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
-  }, [slug, selectedSizes, priceMax, sort, isNew]);
+  }, [products, selectedSizes, priceMax, sort]);
 
   const title = isNew ? 'New Arrivals' : (category?.name || slug?.charAt(0).toUpperCase() + (slug?.slice(1) || ''));
+
+  if (loading) return <div className="py-24 text-center">Loading...</div>;
 
   return (
     <div className="animate-fade-in">

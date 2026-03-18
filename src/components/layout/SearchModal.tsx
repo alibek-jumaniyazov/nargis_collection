@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { mockProducts } from '../../data/mockData';
+import { getProducts } from '../../api/services';
+import type { Product } from '../../types';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -10,14 +11,21 @@ interface SearchModalProps {
 
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Product[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const results = query.trim().length > 1
-    ? mockProducts.filter((p) =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.tags.some((t) => t.toLowerCase().includes(query.toLowerCase()))
-      ).slice(0, 5)
-    : [];
+  useEffect(() => {
+    if (query.trim().length > 1) {
+      const timer = setTimeout(() => {
+        getProducts({ search: query }).then(res => {
+          setResults(res.data.data.slice(0, 5));
+        }).catch(err => console.error(err));
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setResults([]);
+    }
+  }, [query]);
 
   useEffect(() => {
     if (isOpen) {

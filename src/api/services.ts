@@ -2,17 +2,17 @@ import api from './client';
 import type { Product, Category, Banner, FilterState, Order } from '../types';
 
 // ─── Products ────────────────────────────────────────────────────────────────
-export const getProducts = (filters?: FilterState) =>
-  api.get<{ products: Product[]; total: number }>('/products', { params: filters });
+export const getProducts = (filters?: any) =>
+  api.get<{ data: Product[]; pagination: any }>('/products', { params: filters });
 
 export const getProductBySlug = (slug: string) =>
   api.get<Product>(`/products/${slug}`);
 
 export const getFeaturedProducts = () =>
-  api.get<Product[]>('/products?isFeatured=true&limit=8');
+  api.get<{ data: Product[]; pagination: any }>('/products?isFeatured=true&limit=8');
 
 export const getNewArrivals = () =>
-  api.get<Product[]>('/products?isNewArrival=true&limit=8');
+  api.get<{ data: Product[]; pagination: any }>('/products?isNewArrival=true&limit=8');
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 export const getCategories = () =>

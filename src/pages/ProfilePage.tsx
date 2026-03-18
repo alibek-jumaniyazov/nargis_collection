@@ -1,25 +1,11 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Heart, User, LogOut, MapPin } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useWishlistStore } from '../store/wishlistStore';
 import ProductGrid from '../components/product/ProductGrid';
-
-const mockOrders = [
-  {
-    id: 'NC-001284',
-    date: '2025-03-10',
-    status: 'delivered',
-    total: 540,
-    items: [{ name: 'Structured Blazer', image: 'https://images.unsplash.com/photo-1594938298728-73f2f3e2e9ce?auto=format&fit=crop&w=100&h=130&q=80', size: 'M' }],
-  },
-  {
-    id: 'NC-001156',
-    date: '2025-02-28',
-    status: 'shipped',
-    total: 189,
-    items: [{ name: 'Wide-Leg Trousers', image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=100&h=130&q=80', size: 'S' }],
-  },
-];
+import { getMyOrders } from '../api/services';
+import type { Order } from '../types';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-50 text-yellow-700',
@@ -33,12 +19,28 @@ const statusColors: Record<string, string> = {
 export default function ProfilePage() {
   const { user, logout } = useAuthStore();
   const { items: wishlist } = useWishlistStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      getMyOrders()
+        .then(res => {
+          setOrders(res.data);
+          setLoadingOrders(false);
+        })
+        .catch(err => {
+          console.error("Failed to fetch orders:", err);
+          setLoadingOrders(false);
+        });
+    }
+  }, [user]);
 
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <p className="font-serif text-3xl font-light">Please sign in</p>
-        <Link to="/login" className="bg-[#111111] text-white text-[11px] tracking-[0.12em] px-8 py-4">
+        <Link to="/login" className="bg-[#111111] text-white text-[11px] tracking-[0.12em] px-8 py-4 cursor-pointer hover:bg-black transition-colors">
           SIGN IN
         </Link>
       </div>
@@ -85,19 +87,21 @@ export default function ProfilePage() {
           {/* Orders */}
           <div className="mb-12">
             <h2 className="font-serif text-2xl font-light mb-6">My Orders</h2>
-            {mockOrders.length === 0 ? (
+            {loadingOrders ? (
+              <p className="text-sm text-[#6b6b6b]">Loading orders...</p>
+            ) : orders.length === 0 ? (
               <div className="text-center py-12 border border-[#eaeaea]">
                 <Package size={36} className="text-[#eaeaea] mx-auto mb-3" />
                 <p className="text-sm text-[#6b6b6b]">You haven't placed any orders yet.</p>
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                {mockOrders.map((order) => (
+                {orders.map((order) => (
                   <div key={order.id} className="border border-[#eaeaea] p-5">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <span className="text-xs font-medium">#{order.id}</span>
-                        <p className="text-xs text-[#6b6b6b] mt-0.5">{order.date}</p>
+                        <span className="text-xs font-medium">#{order.id.slice(0, 8)}</span>
+                        <p className="text-xs text-[#6b6b6b] mt-0.5">{new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className={`text-[10px] tracking-[0.08em] px-3 py-1.5 uppercase font-medium ${statusColors[order.status] || ''}`}>
@@ -106,15 +110,21 @@ export default function ProfilePage() {
                         <span className="text-sm font-medium">${order.total}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {order.items.map((item, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                          <div className="w-12 h-16 bg-[#f7f7f7] overflow-hidden">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {order.items?.map((item, i) => (
+                        <div key={i} className="flex items-center gap-3 max-w-[200px] mb-2">
+                          <div className="w-12 h-16 bg-[#f7f7f7] overflow-hidden flex-shrink-0">
                             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                           </div>
                           <div>
-                            <p className="text-xs font-medium">{item.name}</p>
-                            <p className="text-xs text-[#6b6b6b]">Size: {item.size}</p>
+                            <p className="text-xs font-medium truncate w-[130px]">{item.name}</p>
+                            {(item.size || item.color) && (
+                              <p className="text-[10px] text-[#6b6b6b]">
+                                {item.size && `Size: ${item.size} `}
+                                {item.color && `Color: ${item.color}`}
+                              </p>
+                            )}
+                            <p className="text-[10px] text-[#6b6b6b]">Qty: {item.quantity}</p>
                           </div>
                         </div>
                       ))}
@@ -132,7 +142,7 @@ export default function ProfilePage() {
               <div className="text-center py-12 border border-[#eaeaea]">
                 <Heart size={36} className="text-[#eaeaea] mx-auto mb-3" />
                 <p className="text-sm text-[#6b6b6b]">Your wishlist is empty.</p>
-                <Link to="/" className="text-xs underline mt-2 block hover:text-[#111111] transition-colors">
+                <Link to="/" className="text-xs underline mt-2 inline-block hover:text-[#111111] transition-colors">
                   Discover new pieces
                 </Link>
               </div>

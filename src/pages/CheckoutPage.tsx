@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
+import { createOrder } from '../api/services';
 
 interface CheckoutForm {
   fullName: string;
@@ -35,10 +36,30 @@ export default function CheckoutPage() {
 
   const onSubmit = async (data: CheckoutForm) => {
     setIsSubmitting(true);
-    // In production, call createOrder API here
-    await new Promise((r) => setTimeout(r, 1500));
-    clearCart();
-    navigate('/order-success');
+    
+    const formattedItems = items.map(item => ({
+      productId: item.product.id,
+      name: item.product.name,
+      image: item.product.coverImage,
+      price: item.product.salePrice || item.product.price,
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color
+    }));
+
+    try {
+      await createOrder({
+        ...data,
+        items: formattedItems,
+        shippingMethod: 'standard'
+      });
+      clearCart();
+      navigate('/order-success');
+    } catch (error) {
+      console.error("Order failed", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const inputClass = (hasError?: boolean) =>

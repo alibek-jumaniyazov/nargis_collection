@@ -1,23 +1,25 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, Heart, User, Menu, X } from 'lucide-react';
-import { useCartStore } from '../../store/cartStore';
-import { useWishlistStore } from '../../store/wishlistStore';
-import { useAuthStore } from '../../store/authStore';
-import SearchModal from './SearchModal';
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Search, ShoppingBag, Heart, User, Menu, X } from "lucide-react";
+import { useCartStore } from "../../store/cartStore";
+import { useWishlistStore } from "../../store/wishlistStore";
+import { useAuthStore } from "../../store/authStore";
+import SearchModal from "./SearchModal";
 
 const NAV_LINKS = [
-  { label: 'WOMEN', href: '/category/women' },
-  { label: 'MEN', href: '/category/men' },
-  { label: 'ACCESSORIES', href: '/category/accessories' },
-  { label: 'NEW IN', href: '/new-collection' },
+  { label: "WOMEN", href: "/category/women" },
+  { label: "MEN", href: "/category/men" },
+  { label: "ACCESSORIES", href: "/category/accessories" },
+  { label: "NEW IN", href: "/new-collection" },
 ];
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   const totalItems = useCartStore((s) => s.getTotalItems());
   const toggleCart = useCartStore((s) => s.toggleCart);
@@ -25,97 +27,120 @@ export default function Navbar() {
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 16);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
-    if (isMobileOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = isMobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isMobileOpen]);
+
+  const iconButtonClass =
+    "relative inline-flex h-10 w-10 items-center justify-center rounded-full text-[#111111] transition-all duration-200 hover:bg-black/[0.04] hover:text-black";
+
+  const badgeClass =
+    "absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#111111] text-white text-[10px] leading-none flex items-center justify-center rounded-full font-medium";
 
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-white border-b border-[#eaeaea] shadow-sm' : 'bg-white/95 backdrop-blur-sm'
+        className={`fixed inset-x-0 ml-6 mr-auto top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? "bg-white/95 backdrop-blur-md border-b border-black/10 shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
+            : "bg-white/80 backdrop-blur-sm"
         }`}
       >
-        <div className="max-w-screen-xl mx-auto px-4 md:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setIsMobileOpen(true)}
-              className="md:hidden p-2 -ml-2 text-[#111111]"
-              aria-label="Open menu"
-            >
-              <Menu size={22} />
-            </button>
+        <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
+          <div className="grid h-[68px] grid-cols-3 items-center md:h-[84px]">
+            {/* Left */}
+            <div className="flex items-center justify-start">
+              <button
+                onClick={() => setIsMobileOpen(true)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#111111] transition hover:bg-black/[0.04] md:hidden"
+                aria-label="Open menu"
+              >
+                <Menu size={22} />
+              </button>
 
-            {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-8">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className="text-[11px] font-medium tracking-[0.12em] text-[#111111] hover:text-[#6b6b6b] transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+              <nav className="hidden md:flex items-center gap-8 lg:gap-10">
+                {NAV_LINKS.map((link) => {
+                  const isActive = location.pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      to={link.href}
+                      className={`relative text-[11px] font-medium tracking-[0.18em] transition-colors duration-200 ${
+                        isActive
+                          ? "text-black"
+                          : "text-[#222222] hover:text-[#777777]"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
 
-            {/* Logo */}
-            <Link
-              to="/"
-              className="absolute left-1/2 -translate-x-1/2 font-serif text-xl md:text-2xl font-light tracking-[0.25em] text-[#111111] select-none"
-            >
-              NARGIS
-            </Link>
+            {/* Center */}
+            <div className="flex items-center justify-center">
+              <Link
+                to="/"
+                className="select-none font-serif text-[20px] font-semibold tracking-[0.28em] text-[#111111] md:text-[26px]"
+              >
+                NARGIS
+              </Link>
+            </div>
 
-            {/* Icons */}
-            <div className="flex items-center gap-1 md:gap-2 ml-auto">
+            {/* Right */}
+            <div className="flex items-center justify-end gap-0.5 sm:gap-1">
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="p-2 text-[#111111] hover:text-[#6b6b6b] transition-colors"
+                className={iconButtonClass}
                 aria-label="Search"
               >
-                <Search size={19} />
+                <Search size={18} strokeWidth={1.9} />
               </button>
 
               <Link
                 to="/wishlist"
-                className="relative p-2 text-[#111111] hover:text-[#6b6b6b] transition-colors"
+                className={iconButtonClass}
                 aria-label="Wishlist"
               >
-                <Heart size={19} />
+                <Heart size={18} strokeWidth={1.9} />
                 {wishlistCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-[#111111] text-white text-[9px] flex items-center justify-center rounded-full font-medium">
-                    {wishlistCount}
-                  </span>
+                  <span className={badgeClass}>{wishlistCount}</span>
                 )}
               </Link>
 
               <button
-                onClick={() => navigate(user ? '/profile' : '/login')}
-                className="p-2 text-[#111111] hover:text-[#6b6b6b] transition-colors"
+                onClick={() => navigate(user ? "/profile" : "/login")}
+                className={iconButtonClass}
                 aria-label="Account"
               >
-                <User size={19} />
+                <User size={18} strokeWidth={1.9} />
               </button>
 
               <button
                 onClick={toggleCart}
-                className="relative p-2 text-[#111111] hover:text-[#6b6b6b] transition-colors"
+                className={iconButtonClass}
                 aria-label="Cart"
               >
-                <ShoppingBag size={19} />
+                <ShoppingBag size={18} strokeWidth={1.9} />
                 {totalItems > 0 && (
-                  <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-[#111111] text-white text-[9px] flex items-center justify-center rounded-full font-medium">
-                    {totalItems}
-                  </span>
+                  <span className={badgeClass}>{totalItems}</span>
                 )}
               </button>
             </div>
@@ -123,49 +148,91 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={() => setIsMobileOpen(false)}
-          />
-          <div className="relative bg-white w-4/5 max-w-sm h-full flex flex-col animate-slide-down p-8">
-            <button
-              onClick={() => setIsMobileOpen(false)}
-              className="absolute top-5 right-5 text-[#111111]"
-            >
-              <X size={22} />
-            </button>
-            <Link to="/" className="font-serif text-xl tracking-[0.25em] mb-10">
-              NARGIS
-            </Link>
-            <nav className="flex flex-col gap-6">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className="text-sm font-medium tracking-[0.12em] text-[#111111]"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-auto border-t border-[#eaeaea] pt-6 flex flex-col gap-4">
+      {/* Mobile menu */}
+      <div
+        className={`fixed inset-0 z-[60] md:hidden transition-all duration-300 ${
+          isMobileOpen
+            ? "pointer-events-auto visible"
+            : "pointer-events-none invisible"
+        }`}
+      >
+        <div
+          onClick={() => setIsMobileOpen(false)}
+          className={`absolute inset-0 bg-black/35 backdrop-blur-[2px] transition-opacity duration-300 ${
+            isMobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+        />
+
+        <aside
+          className={`absolute left-0 top-0 h-full w-[86%] max-w-[360px] bg-white shadow-2xl transition-transform duration-300 ease-out ${
+            isMobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex h-full flex-col px-6 pb-6 pt-5">
+            <div className="mb-8 flex items-center justify-between">
               <Link
-                to={user ? '/profile' : '/login'}
-                onClick={() => setIsMobileOpen(false)}
-                className="text-sm text-[#6b6b6b]"
+                to="/"
+                className="font-serif text-[20px] tracking-[0.24em] text-[#111111]"
               >
-                {user ? `Hello, ${user.fullName.split(' ')[0]}` : 'Login / Register'}
+                NARGIS
               </Link>
+
+              <button
+                onClick={() => setIsMobileOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#111111] transition hover:bg-black/[0.04]"
+                aria-label="Close menu"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <nav className="flex flex-col gap-5">
+              {NAV_LINKS.map((link) => {
+                const isActive = location.pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={`border-b border-[#f1f1f1] pb-4 text-[13px] font-medium tracking-[0.16em] transition-colors ${
+                      isActive ? "text-black" : "text-[#111111] hover:text-[#777777]"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="mt-8 space-y-3 border-t border-[#ebebeb] pt-6">
+              <Link
+                to={user ? "/profile" : "/login"}
+                className="block text-sm text-[#444444]"
+              >
+                {user ? `Hello, ${user.fullName?.split(" ")[0] || "User"}` : "Login / Register"}
+              </Link>
+
+              <Link to="/wishlist" className="block text-sm text-[#444444]">
+                Wishlist {wishlistCount > 0 ? `(${wishlistCount})` : ""}
+              </Link>
+
+              <button
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  toggleCart();
+                }}
+                className="block text-left text-sm text-[#444444]"
+              >
+                Cart {totalItems > 0 ? `(${totalItems})` : ""}
+              </button>
+            </div>
+
+            <div className="mt-auto pt-8 text-xs tracking-[0.14em] text-[#9a9a9a]">
+              ELEVATED ESSENTIALS
             </div>
           </div>
-        </div>
-      )}
+        </aside>
+      </div>
 
-      {/* Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </>
   );

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Heart, ChevronDown, ChevronUp, ArrowLeft, Star } from 'lucide-react';
-import { mockProducts } from '../data/mockData';
+import { getProductBySlug } from '../api/services';
+import type { Product } from '../types';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
 import ProductGrid from '../components/product/ProductGrid';
@@ -9,7 +10,9 @@ import ProductGrid from '../components/product/ProductGrid';
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const product = mockProducts.find((p) => p.slug === slug);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
@@ -22,7 +25,20 @@ export default function ProductDetailPage() {
   const { addItem } = useCartStore();
   const { isWishlisted, toggleItem } = useWishlistStore();
 
-  const related = mockProducts.filter((p) => p.id !== product?.id && p.category.id === product?.category.id).slice(0, 4);
+  useEffect(() => {
+    setLoading(true);
+    if (!slug) return;
+    getProductBySlug(slug)
+      .then(res => {
+        const data: any = res.data;
+        setProduct(data);
+        setRelated(data.relatedProducts || []);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   if (!product) {
     return (

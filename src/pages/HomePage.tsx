@@ -1,19 +1,29 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { mockBanners, mockProducts, mockCategories } from '../data/mockData';
+import { getBanners, getFeaturedProducts, getNewArrivals, getCategories } from '../api/services';
+import type { Banner, Product, Category } from '../types';
 import ProductGrid from '../components/product/ProductGrid';
 
 export default function HomePage() {
   const [bannerIndex, setBannerIndex] = useState(0);
-  const activeBanners = mockBanners.filter((b) => b.isActive);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+  const [featured, setFeatured] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const newArrivals = mockProducts.filter((p) => p.isNewArrival).slice(0, 4);
-  const featured = mockProducts.filter((p) => p.isFeatured).slice(0, 8);
+  useEffect(() => {
+    getBanners().then(res => setBanners(res.data));
+    getNewArrivals().then(res => setNewArrivals(res.data.data)); // Assumed backend wraps arrays in data 
+    getFeaturedProducts().then(res => setFeatured(res.data.data));
+    getCategories().then(res => setCategories(res.data));
+  }, []);
+
+  const activeBanners = banners.filter((b) => b.isActive);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setBannerIndex((i) => (i + 1) % activeBanners.length);
+      setBannerIndex((i) => (activeBanners.length ? (i + 1) % activeBanners.length : 0));
     }, 5000);
     return () => clearInterval(timer);
   }, [activeBanners.length]);
@@ -93,11 +103,11 @@ export default function HomePage() {
       {/* ── Category Bar ─────────────────────────────────────────────── */}
       <section className="py-12 md:py-16 px-4 md:px-8 max-w-screen-xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {mockCategories.map((cat) => (
+          {categories.map((cat) => (
             <Link
               key={cat.id}
               to={`/category/${cat.slug}`}
-              className="group relative overflow-hidden block aspect-[3/4] img-zoom"
+              className="group relative overflow-hidden block aspect-3/4 img-zoom"
             >
               <img
                 src={cat.image}
@@ -169,7 +179,7 @@ export default function HomePage() {
         <div className="grid md:grid-cols-2 gap-0">
           <div className="relative h-96 md:h-[600px] img-zoom">
             <img
-              src="https://source.unsplash.com/800x1000/?women,fashion,elegant"
+              src="https://images.unsplash.com/photo-1515372039744-245a8b66c1c8?auto=format&fit=crop&w=800&h=1000&q=80"
               alt="Women's Collection"
               className="w-full h-full object-cover"
             />
@@ -186,7 +196,7 @@ export default function HomePage() {
           </div>
           <div className="relative h-96 md:h-[600px] img-zoom">
             <img
-              src="https://source.unsplash.com/800x1000/?men,fashion,suit"
+              src="https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?auto=format&fit=crop&w=800&h=1000&q=80"
               alt="Men's Collection"
               className="w-full h-full object-cover"
             />
